@@ -1,2 +1,2 @@
 # renju
-repositury for renju project
+repository for renju project
