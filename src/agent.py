@@ -54,9 +54,15 @@ class SLAgent(Agent):
         return self._name
 
     def policy(self, game):
-        probs = self._model.predict(
-            game.board().reshape((1, game.height, game.width, 1))
-        )
+        inp = numpy.zeros((15, 15, 3), dtype=numpy.int8)
+        inp[:, :, 0][game.board() == -1] = 1
+        inp[:, :, 1][game.board() == 1] = 1
+        if game.player() == -1:
+            inp[:,:,2] = 1
+        else:
+            inp[:,:,2] = 0
+            inp[:,:,[0, 1]] = inp[:,:,[1, 0]]
+        probs = self._model.predict(numpy.expand_dims(inp, axis=0))
         return probs.reshape((game.height, game.width))
 
 class BackendAgent(Agent):
