@@ -2,6 +2,7 @@ from tkinter import *
 import util
 import agent
 import renju
+import MCTS
 import time
 import math
 import itertools
@@ -58,10 +59,10 @@ class Board_Canvas(Canvas):
                          end_pixel_y, fill='black')
 
     def draw_stone(self, row, col, turn):
-        start_pixel_x = (row + 1) * 30 - 10
-        start_pixel_y = (col + 1) * 30 - 10
-        end_pixel_x = (row + 1) * 30 + 10
-        end_pixel_y = (col + 1) * 30 + 10
+        start_pixel_x = (col + 1) * 30 - 10
+        start_pixel_y = (row + 1) * 30 - 10
+        end_pixel_x = (col + 1) * 30 + 10
+        end_pixel_y = (row + 1) * 30 + 10
 
         if turn % 2:
             self.create_oval(start_pixel_x, start_pixel_y, end_pixel_x,
@@ -98,6 +99,8 @@ class GameUI(Frame):
     def reset_game(self, event):
         print("Restart!")
         if event.char == 'r' or event.char == 's':
+            self._white.reset()
+            self._black.reset()
             if event.char == 's':
                 self._black, self._white = self._white, self._black
             self._player = self._black
@@ -119,8 +122,8 @@ class GameUI(Frame):
         self.board_canvas.unbind('<Button-1>')
         for i in range(15):
             for j in range(15):
-                pixel_x = (i + 1) * 30
-                pixel_y = (j + 1) * 30
+                pixel_y = (i + 1) * 30
+                pixel_x = (j + 1) * 30
                 square_x = (event.x - pixel_x)**2
                 square_y = (event.y - pixel_y)**2
                 distance = math.sqrt(square_x + square_y)
@@ -135,8 +138,6 @@ class GameUI(Frame):
         if pos:
             assert self.game.is_possible_move(pos)
             if self.game:
-                if not self._player.is_human():
-                    time.sleep(self._delay)
                 self.game.move(pos)
                 self.board_canvas.draw_stone(*pos, self._turn_number)
                 self._turn_number += 1
@@ -158,6 +159,8 @@ class GameUI(Frame):
                 self.master.bind('<KeyPress>', self.reset_game)
 
             self.next_player()
+            if self.game and self._player.is_tree():
+                    self._player.update_tree(pos)
 
         elif self._player.is_human():
             self.board_canvas.bind('<Button-1>', self.read_move)

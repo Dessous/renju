@@ -35,6 +35,7 @@ class Game:
     max_game_length = width * height
 
     def __init__(self):
+        self.turn_number = 0
         self._result = Player.NONE
         self._player = Player.BLACK
         self._board = numpy.full(self.shape, Player.NONE, dtype=numpy.int8)
@@ -42,7 +43,7 @@ class Game:
 
     def __bool__(self):
         return self.result() == Player.NONE and \
-               len(self._positions) < self.max_game_length
+               self.turn_number < self.max_game_length
 
     def move_n(self):
         return len(self._positions)
@@ -82,13 +83,14 @@ class Game:
         assert self.is_possible_move(pos), 'impossible pos: {pos}'.format(
             pos=pos)
 
-        self._positions.append(pos)
+        #self._positions.append(pos)
         self._board[pos] = self._player
 
         if not self._result and util.check(self._board, pos):
             self._result = self._player
             return
 
+        self.turn_number += 1
         self._player = self._player.another()
 
     def update(self, probs):

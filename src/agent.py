@@ -12,8 +12,14 @@ class Agent(metaclass=abc.ABCMeta):
     def is_human(self):
         '''false or true'''
 
+    def is_tree(self):
+        '''false or true'''
+
     def get_pos(self, game):
         '''return position for move'''
+
+    def reset(self):
+        '''reset for tree'''
 
 
 class HumanAgent(Agent):
@@ -30,6 +36,9 @@ class HumanAgent(Agent):
     def name(self):
         return self._name
 
+    def reset(self):
+        pass
+
 
 class RandomAgent(Agent):
     def __init__(self, name='Random'):
@@ -41,14 +50,14 @@ class RandomAgent(Agent):
     def policy(self, game):
         num = numpy.random.randint(225)
         pos = num // 15, num % 15
-
         while not game.is_possible_move(pos):
             num = numpy.random.randint(225)
             pos = num // 15, num % 15
+        return pos
 
-        probs = numpy.zeros(game.shape)
-        probs[pos] = 1.0
-        return probs
+    def reset(self):
+        pass
+
 
 class SLAgent(Agent):
     def __init__(self, path, name='SL agent'):
@@ -62,24 +71,32 @@ class SLAgent(Agent):
     def is_human(self):
         return False
 
-    def get_pos(self, game):
+    def get_probs(self, game):
         inp = numpy.zeros((15, 15, 3), dtype=numpy.int8)
         inp[:, :, 0][game.board() == -1] = 1
         inp[:, :, 1][game.board() == 1] = 1
         if game.player() == -1:
-            inp[:,:,2] = 1
+            inp[:, :, 2] = 1
         else:
-            inp[:,:,2] = 0
-            inp[:,:,[0, 1]] = inp[:,:,[1, 0]]
+            inp[:, :, 2] = 0
+            inp[:, :, [0, 1]] = inp[:, :, [1, 0]]
         probs = self._model.predict(numpy.expand_dims(inp, axis=0))
+        return probs
+
+    def get_pos(self, game):
+        probs = self.get_probs(game)
         while True:
             num = numpy.argmax(probs)
             pos = num // 15, num % 15
             if not game.is_possible_move(pos):
-                probs[pos] -= 1
+                probs[0, num] -= 1
             else:
                 break
         return pos
+
+    def reset(self):
+        pass
+
 
 class BackendAgent(Agent):
     def __init__(self, backend, name='BackendAgent', **kvargs):
@@ -106,3 +123,6 @@ class BackendAgent(Agent):
     def get_pos(self, game):
         pass
         # TODO: get position for backend agent
+
+    def reset(self):
+        pass
