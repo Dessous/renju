@@ -22,6 +22,49 @@ class Agent(metaclass=abc.ABCMeta):
         '''reset for tree'''
 
 
+class RolloutAgent(Agent):
+    def __init__(self, rollout_path, name='Rollout'):
+        model = load_model(rollout_path)
+        self._name = name
+        self.weights = model.layers[1].get_weights()[0]
+        self.biases = model.layers[1].get_weights()[1]
+
+    def name(self):
+        return self._name
+
+    def is_human(self):
+        return False
+
+    def is_tree(self):
+        return False
+
+    def get_pos(self, game):
+        inp = numpy.zeros((15, 15, 3), dtype=numpy.int8)
+        inp[:, :, 0][game.board() == -1] = 1
+        inp[:, :, 1][game.board() == 1] = 1
+        if game.player() == -1:
+            inp[:, :, 2] = 1
+        else:
+            inp[:, :, 2] = 0
+            inp[:, :, [0, 1]] = inp[:, :, [1, 0]]
+        inp = inp.flatten()
+        probs = (numpy.dot(inp, self.weights) + self.biases).reshape((1, 225))
+        probs = util.softmax(probs)
+        moves = numpy.argmax(probs.reshape((75, 3)), axis=0)
+        for i in range(3):
+            moves[i] = moves[i] * 3 + i
+        while True:
+            pos = numpy.random.choice(moves)
+            if not game.is_possible_move((pos // 15, pos % 15)):
+                pass
+            else:
+                break
+        return pos // 15, pos % 15
+
+    def reset(self):
+        pass
+
+
 class HumanAgent(Agent):
     def __init__(self, name='Human'):
         self._name = name
@@ -47,7 +90,7 @@ class RandomAgent(Agent):
     def name(self):
         return self._name
 
-    def policy(self, game):
+    def get_pos(self, game):
         num = numpy.random.randint(225)
         pos = num // 15, num % 15
         while not game.is_possible_move(pos):
@@ -85,14 +128,18 @@ class SLAgent(Agent):
 
     def get_pos(self, game):
         probs = self.get_probs(game)
+        moves = numpy.argmax(probs.reshape((45, 5)), axis=0)
+        for i in range(5):
+            moves[i] = moves[i] * 5 + i
         while True:
-            num = numpy.argmax(probs)
-            pos = num // 15, num % 15
-            if not game.is_possible_move(pos):
-                probs[0, num] -= 1
+            pos = numpy.random.choice(moves, 1,
+                                      p=probs[0, moves] / probs[0, moves].sum())
+            pos = pos[0]
+            if not game.is_possible_move((pos // 15, pos % 15)):
+                probs[0, pos] = 0
             else:
                 break
-        return pos
+        return pos // 15, pos % 15
 
     def reset(self):
         pass

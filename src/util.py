@@ -5,14 +5,18 @@ import renju
 POS_TO_LETTER = 'abcdefghjklmnop'
 LETTER_TO_POS = {letter: pos for pos, letter in enumerate(POS_TO_LETTER)}
 
+
 def to_move(pos):
     return POS_TO_LETTER[pos[1]] + str(pos[0] + 1)
+
 
 def to_pos(move):
     return int(move[1:]) - 1, LETTER_TO_POS[move[0]]
 
+
 def list_positions(board, player):
     return numpy.vstack(numpy.nonzero(board == player)).T
+
 
 def sequence_length(board, I, J, value):
     length = 0
@@ -23,6 +27,11 @@ def sequence_length(board, I, J, value):
         length += 1
 
     return length
+
+
+def softmax(input):
+    input = numpy.exp(input - numpy.max(input))
+    return input / numpy.sum(input)
 
 
 def check_horizontal(board, pos):

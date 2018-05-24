@@ -134,6 +134,8 @@ class GameUI(Frame):
 
     def game_loop(self):
         #print("game start!")
+        if not self.game:
+            return
         pos = self._player.get_pos(self.game)
         if pos:
             assert self.game.is_possible_move(pos)
@@ -159,10 +161,10 @@ class GameUI(Frame):
                 self.master.bind('<KeyPress>', self.reset_game)
 
             self.next_player()
-            if self.game and self._player.is_tree():
+            if self._player.is_tree() and self.game:
                     self._player.update_tree(pos)
 
-        elif self._player.is_human():
+        elif self._player.is_human() and self.game:
             self.board_canvas.bind('<Button-1>', self.read_move)
 
         self.event_id = self.after(100, self.game_loop)
