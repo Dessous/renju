@@ -146,7 +146,7 @@ class MCTS(agent.Agent):
         start_time = time.clock()
         counter = 0
         self.run = 0
-        while (time.clock() - start_time) < 3:
+        while (time.clock() - start_time) < 10:
             self.simulation()
             counter += 1
         print(counter)
