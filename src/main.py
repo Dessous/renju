@@ -3,9 +3,11 @@ import GUI
 import MCTS
 
 
-agent2 = agent.HumanAgent()
-agent1 = MCTS.MCTS('C:\\Users\\nik\\Desktop\\server\\final2',
-                   'C:\\Users\\nik\\Desktop\\server\\rollout4',
+agent1 = MCTS.MCTS('C:\\Users\\nik\\Desktop\\server\\topmodel228',
+                   'C:\\Users\\nik\\Desktop\\server\\topmodel228',
                    sim_number=10000,
+                   linear=False,
+                   time=14,
                    rollout_depth=10)
+agent2 = agent.HumanAgent()
 GUI.run_gui(agent1, agent2, delay=0)

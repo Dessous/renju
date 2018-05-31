@@ -38,20 +38,32 @@ class Node:
     def is_terminal(self):
         return self.terminal
 
+    def __del__(self):
+        for child in self.children:
+            if child is not None:
+                child.parent = None
+                child.__del__()
+
 
 class MCTS(agent.Agent):
     def __init__(self, agent_path,
                  rollout_path,
                  rollout_depth=10,
+                 time=13,
                  name='Tree',
+                 linear=False,
                  sim_number=10):
         self.agent = agent.SLAgent(agent_path)
-        self.rollout_net = agent.RolloutAgent(rollout_path)
+        if linear:
+            self.rollout_net = agent.RolloutAgent(rollout_path)
+        else:
+            self.rollout_net = agent.SLAgent(rollout_path)
         self.rollout_depth = rollout_depth
         self._name = name
+        self._time = time
         self.sim_number = sim_number
-        self.game = renju.Game()
-        self.root = Node(self.agent.get_probs(self.game), Node.BLACK)
+        self._game = renju.Game()
+        self.root = Node(self.agent.get_probs(self._game), Node.BLACK)
         self.run = 0
 
     def name(self):
@@ -99,7 +111,7 @@ class MCTS(agent.Agent):
         return 0
 
     def simulation(self):
-        game = deepcopy(self.game)
+        game = deepcopy(self._game)
         cur_node = self.root
         while not cur_node.is_leaf():
             move = self.next_node(cur_node, game)
@@ -137,8 +149,10 @@ class MCTS(agent.Agent):
         self.update(cur_node, res)
 
     def change_root(self, new_root):
+        assert new_root is not None
+        new_root.parent = None
+        self.root.__del__()
         self.root = new_root
-        self.root.parent = None
         self.root.pos = None
 
     def get_pos(self, game):
@@ -146,7 +160,7 @@ class MCTS(agent.Agent):
         start_time = time.clock()
         counter = 0
         self.run = 0
-        while (time.clock() - start_time) < 10:
+        while (time.clock() - start_time) < self._time:
             self.simulation()
             counter += 1
         print(counter)
@@ -154,20 +168,29 @@ class MCTS(agent.Agent):
         max_pos = np.argmax(self.root.Nsa)
         pos_with_net = np.argmax(self.root.probs)
         if max_pos != pos_with_net:
+            if self.root.color == Node.BLACK:
+                print("Black: ", end='')
+            else:
+                print("white: ", end='')
             print(util.to_move((max_pos // 15, max_pos % 15)),
                   util.to_move((pos_with_net // 15, pos_with_net % 15)))
         #print(self.root.subtree_size)
-        self.change_root(self.root.children[max_pos])
-        self.game.move((max_pos // 15, max_pos % 15))
+        new_root = copy(self.root.children[max_pos])
+        self.root.children[max_pos] = None
+        self.change_root(new_root)
+        self._game.move((max_pos // 15, max_pos % 15))
         return max_pos // 15, max_pos % 15
 
     def update_tree(self, move):
-        self.game.move(move)
+        self._game.move(move)
         if self.root.children[move[0] * 15 + move[1]] is not None:
-            self.change_root(self.root.children[move[0] * 15 + move[1]])
+            new_root = copy(self.root.children[move[0] * 15 + move[1]])
+            self.root.children[move[0] * 15 + move[1]] = None
+            self.change_root(new_root)
         else:
-            self.root = Node(self.agent.get_probs(self.game), -self.root.color)
+            new_root = Node(self.agent.get_probs(self._game), -self.root.color)
+            self.change_root(new_root)
 
     def reset(self):
-        self.game = renju.Game()
-        self.root = Node(self.agent.get_probs(self.game), Node.BLACK)
+        self._game = renju.Game()
+        self.root = Node(self.agent.get_probs(self._game), Node.BLACK)

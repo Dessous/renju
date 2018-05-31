@@ -50,15 +50,14 @@ class RolloutAgent(Agent):
         inp = inp.flatten()
         probs = (numpy.dot(inp, self.weights) + self.biases).reshape((1, 225))
         probs = util.softmax(probs)
-        moves = numpy.argmax(probs.reshape((75, 3)), axis=0)
-        for i in range(3):
-            moves[i] = moves[i] * 3 + i
-        while True:
-            pos = numpy.random.choice(moves)
-            if not game.is_possible_move((pos // 15, pos % 15)):
-                pass
-            else:
-                break
+        probs[0, game.board().flatten() == 1] = 0
+        probs[0, game.board().flatten() == -1] = 0
+        probs = probs / probs.sum()
+        moves = numpy.argsort(probs.flatten())[-3:]
+        assert (probs[0, moves].sum() != 0), "bug with probs\n"
+        pos = numpy.random.choice(moves, 1,
+                                  p=probs[0, moves] / probs[0, moves].sum())
+        pos = pos[0]
         return pos // 15, pos % 15
 
     def reset(self):
@@ -128,22 +127,14 @@ class SLAgent(Agent):
 
     def get_pos(self, game):
         probs = self.get_probs(game)
-        probs = probs.reshape(15,15)
-        probs[game._board == 1] = 0
-        probs[game._board == -1] = 0
-        probs = probs.reshape(1, 225) / probs.sum()
-        moves = numpy.argmax(probs.reshape((45, 5)), axis=0)
-        for i in range(5):
-            moves[i] = moves[i] * 5 + i
-        while True:
-            assert(probs[0, moves].sum() != 0), "bug with probs\n"
-            pos = numpy.random.choice(moves, 1,
-                                      p=probs[0, moves] / probs[0, moves].sum())
-            pos = pos[0]
-            if not game.is_possible_move((pos // 15, pos % 15)):
-                probs[0, pos] = 0
-            else:
-                break
+        probs[0, game.board().flatten() == 1] = 0
+        probs[0, game.board().flatten() == -1] = 0
+        probs = probs / probs.sum()
+        moves = numpy.argsort(probs.flatten())[-5:]
+        assert(probs[0, moves].sum() != 0), "bug with probs\n"
+        pos = numpy.random.choice(moves, 1,
+                                    p=probs[0, moves] / probs[0, moves].sum())
+        pos = pos[0]
         return pos // 15, pos % 15
 
     def reset(self):

@@ -32,7 +32,7 @@ class Game:
     width, height = 15, 15
     shape = (width, height)
     line_length = 5
-    max_game_length = width * height
+    max_game_length = 80
 
     def __init__(self):
         self.turn_number = 0
