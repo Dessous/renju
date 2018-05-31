@@ -128,10 +128,15 @@ class SLAgent(Agent):
 
     def get_pos(self, game):
         probs = self.get_probs(game)
+        probs = probs.reshape(15,15)
+        probs[game._board == 1] = 0
+        probs[game._board == -1] = 0
+        probs = probs.reshape(1, 225) / probs.sum()
         moves = numpy.argmax(probs.reshape((45, 5)), axis=0)
         for i in range(5):
             moves[i] = moves[i] * 5 + i
         while True:
+            assert(probs[0, moves].sum() != 0), "bug with probs\n"
             pos = numpy.random.choice(moves, 1,
                                       p=probs[0, moves] / probs[0, moves].sum())
             pos = pos[0]
