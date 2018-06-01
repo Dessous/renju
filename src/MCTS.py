@@ -163,17 +163,7 @@ class MCTS(agent.Agent):
         while (time.clock() - start_time) < self._time:
             self.simulation()
             counter += 1
-        print(counter)
         #print(self.run)
-        max_pos = np.argmax(self.root.Nsa)
-        pos_with_net = np.argmax(self.root.probs)
-        if max_pos != pos_with_net:
-            if self.root.color == Node.BLACK:
-                print("Black: ", end='')
-            else:
-                print("white: ", end='')
-            print(util.to_move((max_pos // 15, max_pos % 15)),
-                  util.to_move((pos_with_net // 15, pos_with_net % 15)))
         #print(self.root.subtree_size)
         new_root = copy(self.root.children[max_pos])
         self.root.children[max_pos] = None
