@@ -165,6 +165,7 @@ class MCTS(agent.Agent):
             counter += 1
         #print(self.run)
         #print(self.root.subtree_size)
+        max_pos = np.argmax(self.root.Nsa)
         new_root = copy(self.root.children[max_pos])
         self.root.children[max_pos] = None
         self.change_root(new_root)
